@@ -14,8 +14,10 @@ import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
 import com.squareup.picasso.Picasso
 import org.json.JSONObject
+import java.io.BufferedReader
 import java.io.File
 import java.io.FileOutputStream
+import java.io.FileReader
 import java.io.IOException
 
 // TODO (2: Add function saveComic(...) to save comic info when downloaded
@@ -46,10 +48,35 @@ class MainActivity : AppCompatActivity() {
         showButton = findViewById<Button>(R.id.showComicButton)
         comicImageView = findViewById<ImageView>(R.id.comicImageView)
 
+        // create a file to store the comic
+        file = File(filesDir, internalFilename)
+
+        // load file if data exists
+        loadComic()
+
         showButton.setOnClickListener {
             downloadComic(numberEditText.text.toString())
         }
 
+    }
+
+    // loads file if data exists
+    private fun loadComic() {
+        if (file.exists()) {
+            try {
+                val br = BufferedReader(FileReader(file))
+                val text = StringBuilder()
+                var line: String?
+                while (br.readLine().also { line = it } != null) {
+                    text.append(line)
+                    text.append('\n')
+                }
+                br.close()
+                showComic(JSONObject(text.toString()))
+            } catch (e: IOException) {
+                e.printStackTrace()
+            }
+        }
     }
 
     // Fetches comic from web as JSONObject
@@ -57,7 +84,10 @@ class MainActivity : AppCompatActivity() {
         val url = "https://xkcd.com/$comicId/info.0.json"
         requestQueue.add (
             JsonObjectRequest(url
-                , {showComic(it)}
+                //           v the JSON object
+                , {showComic(it)
+                    // show it, and save it
+                  saveComic(it)}
                 , {}
             )
         )
